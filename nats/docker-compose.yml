@@ -1,0 +1,26 @@
+services:
+  nats:
+    image: nats:latest
+    container_name: nats-ms-xxx
+    ports:
+      - "4222:4222"   # Клиентские подключения
+      - "8222:8222"   # HTTP мониторинг
+      - "6222:6222"   # Cluster (на будущее)
+    volumes:
+      - ./config:/etc/nats
+      - ./data:/data/jetstream
+      - ./logs:/var/log/nats
+    command:
+      -c /etc/nats/server.conf
+      -DV  # Debug + Trace логи (убери -DV для production)
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nats-box:
+    image: natsio/nats-box:latest
+    container_name: nats-box
+    command: tail -f /dev/null

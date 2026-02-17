@@ -1,0 +1,5 @@
+/.idea
+data/jetstream/*
+logs/*
+config/accounts/*
+!config/accounts/ms_xxx.conf
