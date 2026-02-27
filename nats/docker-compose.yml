@@ -9,7 +9,7 @@ services:
     volumes:
       - ./config:/etc/nats
       - ./data:/data/jetstream
-      - ./logs:/var/log/nats
+#      - ./logs:/var/log/nats   # volume для логов (указать логирование в файл в server.conf)
     command:
       -c /etc/nats/server.conf
       -DV  # Debug + Trace логи (убери -DV для production)
