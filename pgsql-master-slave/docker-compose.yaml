@@ -1,0 +1,60 @@
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  # ========== MASTER (запись) ==========
+  postgres-master:
+    image: bitnami/postgresql:latest
+    container_name: postgres-master
+    hostname: master-db                     # явно задаём хост
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=mysecretpassword
+      - POSTGRESQL_DATABASE=ms_payments
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+    ports:
+      - "5432:5432"                         # опционально для доступа с хоста
+    volumes:
+      - postgres-master-data:/bitnami/postgresql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "app_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========== REPLICA (чтение) ==========
+  postgres-replica:
+    image: bitnami/postgresql:latest
+    container_name: postgres-replica
+    hostname: replica-db                   # другой хост
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=mysecretpassword
+      - POSTGRESQL_DATABASE=ms_payments
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_MASTER_HOST=postgres-master
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+    ports:
+      - "5433:5432"                         # другой порт на хосте, внутри сети 5432
+    volumes:
+      - postgres-replica-data:/bitnami/postgresql
+    networks:
+      - app-network
+    depends_on:
+      - postgres-master
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "app_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-master-data:
+  postgres-replica-data:
