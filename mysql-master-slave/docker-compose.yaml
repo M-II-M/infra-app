@@ -1,0 +1,43 @@
+networks:
+  mysql-net:
+    driver: bridge
+
+services:
+  mysql-primary:
+    image: mysql:8.0
+    container_name: mysql-primary
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: app_db
+    # Изменили путь монтирования во временную папку
+    volumes:
+      - ./master.cnf:/tmp/master.cnf
+    ports:
+      - "3306:3306"
+    networks:
+      - mysql-net
+    # Скрипт копирует файл, меняет права и запускает MySQL
+    command: >
+      sh -c "cp /tmp/master.cnf /etc/mysql/conf.d/master.cnf 
+      && chmod 644 /etc/mysql/conf.d/master.cnf 
+      && exec docker-entrypoint.sh mysqld"
+
+  mysql-replica:
+    image: mysql:8.0
+    container_name: mysql-replica
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+    # Изменили путь монтирования во временную папку
+    volumes:
+      - ./replica.cnf:/tmp/replica.cnf
+    ports:
+      - "3307:3306"
+    networks:
+      - mysql-net
+    depends_on:
+      - mysql-primary
+    # Скрипт копирует файл, меняет права и запускает MySQL
+    command: >
+      sh -c "cp /tmp/replica.cnf /etc/mysql/conf.d/replica.cnf 
+      && chmod 644 /etc/mysql/conf.d/replica.cnf 
+      && exec docker-entrypoint.sh mysqld"
